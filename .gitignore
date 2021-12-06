@@ -1,0 +1,13 @@
+.env
+env/
+.idea/
+__pycache__/
+*.pyc
+/info
+/*.rdb
+
+.DS_Store
+*.log
+*.pot
+
+
