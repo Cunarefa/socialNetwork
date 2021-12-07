@@ -77,33 +77,33 @@ class LikeView(APIView):
     authentication_classes = [JWTAuthentication]
 
     def post(self, request, *args, **kwargs):
-        post = Post.objects.get(id=self.request.data['post_id'])
-        like = self.queryset.filter(author=self.request.user, post=post.id).first()
+        post = Post.objects.get(id=request.data['post_id'])
+        like = self.queryset.filter(author=request.user, post=post.id).first()
         if like:
             return Response('You have already liked this post.')
         serializer = LikeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(author=self.request.user, post=post)
-        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+        serializer.save(author=request.user, post=post)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
-        post = Post.objects.get(id=self.request.data['post_id'])
-        like = self.queryset.filter(author=self.request.user, post=post.id).first()
+        post = Post.objects.get(id=request.data['post_id'])
+        like = self.queryset.filter(author=request.user, post=post.id).first()
         if not like:
             return Response('You did not like this post.')
-        like = Like.objects.filter(author=self.request.user.id, post=post.id)
+
         like.delete()
-        return Response(status.HTTP_200_OK)
+        return Response(status.HTTP_204_NO_CONTENT)
 
 
 class LikeAnalytic(APIView):
     def get(self, request, *args, **kwargs):
-        date_from = self.request.query_params.get('date_from')
-        date_to = self.request.query_params.get('date_to')
+        date_from = request.query_params.get('date_from')
+        date_to = request.query_params.get('date_to')
         queryset = Like.objects.filter(date_created__gte=date_from, date_created__lte=date_to) \
             .values('date_created').annotate(amount=Count('id'))
         serializer = LikeAmountSerializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status.HTTP_200_OK)
 
 
 class UserActivity(ModelViewSet):
