@@ -20,13 +20,22 @@ class DataGenerator:
         for _ in range(number_of_users):
             username = fake.unique.email()
             password = username
-            requests.post(SIGNUP_URL, data={'username': username, 'password': password})
+            try:
+                requests.post(SIGNUP_URL, data={'username': username, 'password': password})
+            except Exception as err:
+                print(f'Error while creating new user with username {username}. Exception: {err}')
+                return {}
+
             self.login(username, password)
 
     def login(self, username, password):
         login_data = {'username': username, 'password': password}
-        response = requests.post(LOGIN_URL, data=login_data)
-        self.set_headers(response)
+        try:
+            response = requests.post(LOGIN_URL, data=login_data)
+            self.set_headers(response)
+        except Exception as err:
+            print(f"Exception while logining user with username {username} and password {password}. Exception: {err}")
+
         self.create_random_posts()
 
     def set_headers(self, response):
@@ -39,7 +48,12 @@ class DataGenerator:
         quantity_to_create = random.randint(1, max_posts_per_user)
         for _ in range(quantity_to_create):
             post_data = {'title': fake.text(max_nb_chars=20), 'content': fake.sentences(nb=5)}
-            post = requests.post(POSTS_URL, data=post_data, headers=self.headers)
+            try:
+                post = requests.post(POSTS_URL, data=post_data, headers=self.headers)
+            except Exception as err:
+                print(f"Exception while creating post with data: {post_data}. Exception: {err}")
+                return {}
+
             self.posts.append(post)
 
     def set_likes(self):
@@ -48,7 +62,11 @@ class DataGenerator:
                 response_to_dict = ast.literal_eval(post.text)
                 post_id = response_to_dict['id']
                 data = {'post_id': post_id}
-                requests.post(LIKES_URL, headers=headers, data=data)
+                try:
+                    requests.post(LIKES_URL, headers=headers, data=data)
+                except Exception as err:
+                    print(f"Exception while liking post with id {post_id}. Exception: {err}")
+                    return {}
 
 
 if __name__ == '__main__':
