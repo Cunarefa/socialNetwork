@@ -1,8 +1,6 @@
-from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.validators import UniqueValidator
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User, Post, Like
 
@@ -37,13 +35,7 @@ class LoginSerializer(serializers.Serializer):
         if not user.check_password(data['password']):
             raise AuthenticationFailed('The password is incorrect!')
 
-        token = RefreshToken.for_user(user)
-        update_last_login(None, user)
-
-        return {
-            'username': user.username,
-            'access_token': str(token.access_token)
-        }
+        return user
 
 
 class PostSerializer(serializers.ModelSerializer):
