@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Post, Like, User
 from .serializers import UserRegistrationSerializer, PostSerializer, LikeSerializer, LikeAmountSerializer, \
-    UserActivitySerializer
+    UserActivitySerializer, LoginSerializer
 
 
 class UserRegistrationView(ModelViewSet):
@@ -30,21 +30,9 @@ class UserRegistrationView(ModelViewSet):
 
 class LoginView(APIView):
     def post(self, request):
-        username = request.data['username']
-        password = request.data['password']
-        user = User.objects.filter(username=username).first()
-
-        if not user or not user.is_active:
-            raise AuthenticationFailed('User not found!')
-
-        if not user.check_password(password):
-            raise AuthenticationFailed('The password is incorrect!')
-
-        token = RefreshToken.for_user(user)
-        update_last_login(None, user)
-
-        return Response({'id': user.id, 'user': user.username,
-                         'access': str(token.access_token), 'refresh': str(token)})
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
@@ -80,7 +68,10 @@ class LikeView(APIView):
         post = Post.objects.get(id=request.data['post_id'])
         like = self.queryset.filter(author=request.user, post=post.id).first()
         if like:
-            return Response('You have already liked this post.')
+            return Response(
+                {'error': 'You have already liked this post.'}
+            )
+
         serializer = LikeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(author=request.user, post=post)
@@ -90,7 +81,9 @@ class LikeView(APIView):
         post = Post.objects.get(id=request.data['post_id'])
         like = self.queryset.filter(author=request.user, post=post.id).first()
         if not like:
-            return Response('You did not like this post.')
+            return Response(
+                {'error': 'You did not like this post.'}
+            )
 
         like.delete()
         return Response(status.HTTP_204_NO_CONTENT)
